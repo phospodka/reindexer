@@ -1,0 +1,7 @@
+curl -XPUT 'http://${host}:9200/_snapshot/repository' -d '{
+    "type": "fs",
+    "settings": {
+        "location": "${repository_location}",
+        "compress": true
+    }
+}'

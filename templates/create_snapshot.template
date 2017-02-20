@@ -1,0 +1,5 @@
+curl -XPUT "http://${host}/_snapshot/repository/snapshot_${index}?wait_for_completion=true" -d '{
+    "indices": "${index}",
+    "ignore_unavailable": "true",
+    "include_global_state": false
+}'

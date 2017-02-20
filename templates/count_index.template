@@ -1,0 +1,5 @@
+curl -XGET 'http://${host}/${index}/_count' -d '{
+    "query" : { 
+        "match_all" : { } 
+    } 
+}'

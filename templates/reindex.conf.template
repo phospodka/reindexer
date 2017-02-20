@@ -1,0 +1,49 @@
+input {
+    elasticsearch {
+        hosts => ['${source_host}']
+        index => '${source_index}'
+    }
+}
+
+filter {
+    ruby {
+        code =>
+            # when trying to run this by hand, remove the escape (\) from the begin and end
+            \"begin
+                # find the attributes 'key'
+                keys = event.to_hash.keys
+                keys.each{|key|
+                    # go through each field attribute and see if it needs to be renamed
+                    if ( key == 'attributes' )
+                        attribute = event[key]
+                        attribute.keys.each{|attr|
+                            if ( attr.include? '.' )
+                                newattr = attr.gsub('.', '_')
+                                attribute[newattr] = attribute.delete(attr)
+                            end
+                        }
+                    end
+                }
+
+                rescue Exception => e
+                event['logstash_ruby_exception'] = 'underscores: ' + e.message
+            end\"
+    }
+}
+
+output {
+    #stdout {
+        # Print each event to stdout.  Debug only.
+    #    codec => rubydebug
+    #}
+
+    elasticsearch {
+        hosts => ['${dest_host}']
+        document_type => '${type}'
+        index => '${dest_index}'
+        # path to elasticsearch template mapping file
+        template => '${path}elasticsearch-template.json'
+        # overwrite the logstash template on startup
+        template_overwrite => 'true'
+    }
+}
