@@ -45,7 +45,7 @@ class Reindexer:
 
     def __init__(self, logging_level):
         """
-        init the Reindexer
+        Init the Reindexer
         :param logging_level: logging level to configure at
         """
         self.init_logging(logging_level)
@@ -77,8 +77,6 @@ class Reindexer:
         :return: contents of template as a string
         """
         template = ''
-
-        # Set the directory you want to start from
         filename = self.homedir + '/templates/' + name + '.template'
         # maybe make some sort of trace logging for this? and a few other things?
         # logger.debug('loading template: ' + filename)
@@ -91,7 +89,7 @@ class Reindexer:
 
     def replace_template(self, name):
         """
-        Get and replace values in a template with the supplied properties.
+        Get and replace values in a template with the loaded properties.
         :param name: template name to lookup, expecting to be sans .template
         :return: template string with replaced values
         """
@@ -226,13 +224,15 @@ class Reindexer:
         """
         self._props['host'] = self._props['source_host']
         self._props['index'] = self._props['source_index']
+        return self
 
-    def set_dest(self):
+    def set_dest_props(self):
         """
         Set the host and index to the dest values.
         """
         self._props['host'] = self._props['dest_host']
         self._props['index'] = self._props['dest_index']
+        return self
 
     def set_flux_props(self, index_type, source, dest, date):
         """
@@ -308,12 +308,12 @@ def main(argv):
     daterange = r.expand_daterange(start, end)
     logger.info('date range - ' + str(daterange))
 
-    # success is our flag to see if we finished to conditionally log
+    # success flag to see if we finished and can conditionally log
     success = False
 
-    # run reindexing for each date in the range, exit on an failure
+    # run reindexing for each date in the range, exit on any failure
     for date in daterange:
-        logger.info(date + ' - started processing')
+        logger.info(str(date) + ' - started processing')
         success = False
 
         for index_type, item in r.types.items():
@@ -321,16 +321,14 @@ def main(argv):
             index = item.get('source') + date
 
             try:
-                # check if the index exists at the source and skip if it is missing
                 try:
-                    r.set_source_props()
-                    if '404' in r.invoke_template('check_index'):
+                    # check if the index exists at the source and skip if it is missing
+                    if '404' in r.set_source_props().invoke_template('check_index'):
                         logger.warn(index + ' - skipping; ' + index_type + ' index not available')
                         continue
 
                     # skip if we have already processed at the destination
-                    r.set_dest()
-                    if '200' in r.invoke_template('check_index'):
+                    if '200' in r.set_dest_props().invoke_template('check_index'):
                         logger.warn(index + ' - skipping; ' + index_type + ' already processed')
                         continue
 
@@ -339,8 +337,7 @@ def main(argv):
                     break
 
                 # run count docs query
-                r.set_source_props()
-                before = r.process_command('count_index',
+                before = r.set_source_props().process_command('count_index',
                                            'count of ' + index_type + ' to reindex', 'count')
 
                 # run reindex
@@ -357,8 +354,7 @@ def main(argv):
                 time.sleep(delay)
 
                 # run count docs query
-                r.set_dest()
-                after = r.process_command('count_index',
+                after = r.set_dest_props().process_command('count_index',
                                           'count of ' + index_type + ' reindexed', 'count')
 
                 if before != after:
@@ -375,7 +371,7 @@ def main(argv):
             except (KeyError, TypeError, RuntimeError) as e:
                 logger.error('halting processing; see previous errors')
                 break
-        logger.info(date + ' - finished processing')
+        logger.info(str(date) + ' - finished processing')
     if success:
         logger.info('date range - finished')
 
