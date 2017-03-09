@@ -2,12 +2,15 @@ Reindexer
 ========================
 
 Reindexer is python convenience utility for reindexing elastic indices.  It provides error handling
-and some sanity checking of counts as it process daily indices.  Every operation is performed using
-a template that can be tailored as needed.  Some replacement values are calculated but any number
-of other values can be supplied in the replacement.properties file.
+and some sanity checking of counts as it process daily indices.  The reindexing process is done using
+Logstash.  Every operation is performed using a template that can be tailored as needed.  Some replacement 
+values are calculated but any number of other values can be supplied in the replacement.properties file.
 
 Dependencies
 ------------------------
+Relies on Logstash to perform reindexing.
+
+Relies on curl to perform queries against elasticsearch.
 
 Relies on a number of packages that should be standard install (I hope).
 
